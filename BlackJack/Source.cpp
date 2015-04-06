@@ -241,63 +241,60 @@ void playBlackJack(Card deck[]) {
 			std::cout << '\n';
 
 			switch(*option) {
-			case 'H':
-			case 'h':
-				std::cout << "Player hits.\n\n";
-				dealCard(vDeck, chosenCard, rng, *currentHand);
-				playerScore = calculateHandValue(*currentHand, *currentScore);
-				printPlayerHand(*currentHand, *currentScore);
-				(*turn)++;
-				break;
-			case 'T':
-			case 't':
-				std::cout << "Player stands.\n\n";
-				*isPlayerTurn = false;
-				*isHouseTurn = true;
-				(*turn)++;
-				break;
-			case 'D':
-			case 'd':
-				std::cout << "Player doubles up.\n\n";
-				*selectDouble = true;
-				dealCard(vDeck, chosenCard, rng, *currentHand);
-				playerScore = calculateHandValue(*currentHand, *currentScore);
-				printPlayerHand(*currentHand, *currentScore);
-				*isPlayerTurn = false;
-				*isHouseTurn = true;
-				(*turn)++;
-				break;
-			case 'P':
-			case 'p':
-				if((**currentHand).at(0).strValue == (**currentHand).at(1).strValue || (**currentHand).at(0).value >= 10 && (**currentHand).at(1).value >= 10) {
-					std::cout << "Player splits.\n\n";
-					*numHands = 2;
-					*playerHasSplit = true;
-					(*playerFirstHand).push_back((**currentHand).at(0));
-					(*playerSecondHand).push_back((**currentHand).at(1));
-					// Revert any changes made to the value of Aces in the event of being dealt two Aces
-					// (see line 101 for information)
-					if((*playerFirstHand).at(0).value == 1) {
-						(*playerFirstHand).at(0).setValues(11);
-					}
-					if((*playerSecondHand).at(0).value == 1) {
-						(*playerSecondHand).at(0).setValues(11);
-					}
-					dealCard(vDeck, chosenCard, rng, playerFirstHand);
-					dealCard(vDeck, chosenCard, rng, playerSecondHand);
-					calculateHandValue(playerFirstHand, playerFirstHandScore);
-					calculateHandValue(playerSecondHand, playerSecondHandScore);
-					printPlayerHand(playerFirstHand, playerFirstHandScore, 1);
-					printPlayerHand(playerSecondHand, playerSecondHandScore, 2);
+				case 'H':
+				case 'h':
+					std::cout << "Player hits.\n\n";
+					dealCard(vDeck, chosenCard, rng, *currentHand);
+					playerScore = calculateHandValue(*currentHand, *currentScore);
+					printPlayerHand(*currentHand, *currentScore);
 					(*turn)++;
 					break;
-				}
-				else {
-					std::cout << "Cannot split\n";
-				}
-			default:
-				std::cout << "Invalid option, choose again\n";
-				break;
+				case 'T':
+				case 't':
+					std::cout << "Player stands.\n\n";
+					*isPlayerTurn = false;
+					*isHouseTurn = true;
+					(*turn)++;
+					break;
+				case 'D':
+				case 'd':
+					std::cout << "Player doubles up.\n\n";
+					*selectDouble = true;
+					dealCard(vDeck, chosenCard, rng, *currentHand);
+					playerScore = calculateHandValue(*currentHand, *currentScore);
+					printPlayerHand(*currentHand, *currentScore);
+					*isPlayerTurn = false;
+					*isHouseTurn = true;
+					(*turn)++;
+					break;
+				case 'P':
+				case 'p':
+					if((**currentHand).at(0).strValue == (**currentHand).at(1).strValue || (**currentHand).at(0).value >= 10 && (**currentHand).at(1).value >= 10) {
+						std::cout << "Player splits.\n\n";
+						*numHands = 2;
+						*playerHasSplit = true;
+						(*playerFirstHand).push_back((**currentHand).at(0));
+						(*playerSecondHand).push_back((**currentHand).at(1));
+						// Revert any changes made to the value of Aces in the event of being dealt two Aces
+						// (see line 101 for information)
+						if((*playerFirstHand).at(0).value == 1) {
+							(*playerFirstHand).at(0).setValues(11);
+						}
+						if((*playerSecondHand).at(0).value == 1) {
+							(*playerSecondHand).at(0).setValues(11);
+						}
+						dealCard(vDeck, chosenCard, rng, playerFirstHand);
+						dealCard(vDeck, chosenCard, rng, playerSecondHand);
+						calculateHandValue(playerFirstHand, playerFirstHandScore);
+						calculateHandValue(playerSecondHand, playerSecondHandScore);
+						printPlayerHand(playerFirstHand, playerFirstHandScore, 1);
+						printPlayerHand(playerSecondHand, playerSecondHandScore, 2);
+						(*turn)++;
+						break;
+					}
+				default:
+					std::cout << "Invalid option, choose again\n";
+					break;
 			}
 		}
 		else { // Automatically switch to house's turn if player has 21
@@ -313,24 +310,24 @@ void playBlackJack(Card deck[]) {
 		std::cin >> *option;
 		std::cout << '\n';
 		switch(*option) {
-		case 'H':
-		case 'h':
-			std::cout << "Player hits.\n\n";
-			dealCard(vDeck, chosenCard, rng, *currentHand);
-			playerScore = calculateHandValue(*currentHand, *currentScore);
-			printPlayerHand(*currentHand, *currentScore);
-			(*turn)++;
-			break;
-		case 'T':
-		case 't':
-			std::cout << "Player stands.\n\n";
-			*isPlayerTurn = false;
-			*isHouseTurn = true;
-			(*turn)++;
-			break;
-		default:
-			std::cout << "Invalid option, choose again\n";
-			break;
+			case 'H':
+			case 'h':
+				std::cout << "Player hits.\n\n";
+				dealCard(vDeck, chosenCard, rng, *currentHand);
+				playerScore = calculateHandValue(*currentHand, *currentScore);
+				printPlayerHand(*currentHand, *currentScore);
+				(*turn)++;
+				break;
+			case 'T':
+			case 't':
+				std::cout << "Player stands.\n\n";
+				*isPlayerTurn = false;
+				*isHouseTurn = true;
+				(*turn)++;
+				break;
+			default:
+				std::cout << "Invalid option, choose again\n";
+				break;
 		}
 		std::cout << '\n';
 	}
@@ -406,20 +403,20 @@ bool playAgain() {
 		std::cin >> *option;
 
 		switch(*option) {
-		case 'Y':
-		case 'y':
-			std::cout << "\n\n";
-			delete option;
-			return true;
-			break;
-		case 'N':
-		case 'n':
-			delete option;
-			return false;
-			break;
-		default:
-			std::cout << "Invalid option\n\n";
-			break;
+			case 'Y':
+			case 'y':
+				std::cout << "\n\n";
+				delete option;
+				return true;
+				break;
+			case 'N':
+			case 'n':
+				delete option;
+				return false;
+				break;
+			default:
+				std::cout << "Invalid option\n\n";
+				break;
 		}
 	}
 }
