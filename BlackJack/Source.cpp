@@ -188,25 +188,27 @@ void playBlackJack(Card deck[]) {
 	int * turn = new int;
 	int * waitTime = new int;
 
+	bool * changePlayerHand = new bool;
 	bool * isHouseTurn = new bool;
 	bool * isPlayerTurn = new bool;
 	bool * playerHasSplit = new bool;
 	bool * selectDouble = new bool;
 
-	vector<Card> ** currentHand; // Pointer containing the current hand in play
-	int ** currentScore; // Pointer containing the score of the current hand in play
+	vector<Card> ** currentHand = new vector<Card> *; // Pointer containing the current hand in play
+	int ** currentScore = new int *; // Pointer containing the score of the current hand in play
 
 	std::mt19937 * rng = new mt19937;
 	(*rng).seed(std::random_device()());
 
 	*numHands = 1;
 	*turn = 1;
-	*waitTime = 1000;
+	*waitTime = 300;
 	*isHouseTurn = false;
 	*isPlayerTurn = true;
 	*selectDouble = false;
 	*playerHasSplit = false;
 	*houseScore = *houseInitScore = *playerScore = 0;
+	*playerFirstHandScore = *playerSecondHandScore = 0;
 
 	// Gameplay
 	// Deal cards and calculate values
@@ -225,15 +227,11 @@ void playBlackJack(Card deck[]) {
 	printPlayerHand(playerHand, playerScore);
 	std::cout << '\n';
 
-	// Setting up pointers to pointer. This is a change to accommodate dealing to split hands
-	currentHand = &playerHand;
-	currentScore = &playerScore;
-
 	// Player's first turn
 	while(*turn == 1 && isPlayerTurn) {
 		if(*playerScore < 21) {
 			std::cout << "Select action\n" << "([H]it, S[t]and, [D]ouble";
-			if((**currentHand).at(0).strValue == (**currentHand).at(1).strValue || (**currentHand).at(0).value >= 10 && (**currentHand).at(1).value >= 10) {
+			if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
 				std::cout << ", S[p]lit";
 			}
 			std::cout << "): ";
@@ -244,9 +242,9 @@ void playBlackJack(Card deck[]) {
 				case 'H':
 				case 'h':
 					std::cout << "Player hits.\n\n";
-					dealCard(vDeck, chosenCard, rng, *currentHand);
-					playerScore = calculateHandValue(*currentHand, *currentScore);
-					printPlayerHand(*currentHand, *currentScore);
+					dealCard(vDeck, chosenCard, rng, playerHand);
+					playerScore = calculateHandValue(playerHand, playerScore);
+					printPlayerHand(playerHand, playerScore);
 					(*turn)++;
 					break;
 				case 'T':
@@ -260,21 +258,21 @@ void playBlackJack(Card deck[]) {
 				case 'd':
 					std::cout << "Player doubles up.\n\n";
 					*selectDouble = true;
-					dealCard(vDeck, chosenCard, rng, *currentHand);
-					playerScore = calculateHandValue(*currentHand, *currentScore);
-					printPlayerHand(*currentHand, *currentScore);
+					dealCard(vDeck, chosenCard, rng, playerHand);
+					playerScore = calculateHandValue(playerHand, playerScore);
+					printPlayerHand(playerHand, playerScore);
 					*isPlayerTurn = false;
 					*isHouseTurn = true;
 					(*turn)++;
 					break;
 				case 'P':
 				case 'p':
-					if((**currentHand).at(0).strValue == (**currentHand).at(1).strValue || (**currentHand).at(0).value >= 10 && (**currentHand).at(1).value >= 10) {
+					if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
 						std::cout << "Player splits.\n\n";
 						*numHands = 2;
 						*playerHasSplit = true;
-						(*playerFirstHand).push_back((**currentHand).at(0));
-						(*playerSecondHand).push_back((**currentHand).at(1));
+						(*playerFirstHand).push_back((*playerHand).at(0));
+						(*playerSecondHand).push_back((*playerHand).at(1));
 						// Revert any changes made to the value of Aces in the event of being dealt two Aces
 						// (see line 101 for information)
 						if((*playerFirstHand).at(0).value == 1) {
@@ -285,8 +283,8 @@ void playBlackJack(Card deck[]) {
 						}
 						dealCard(vDeck, chosenCard, rng, playerFirstHand);
 						dealCard(vDeck, chosenCard, rng, playerSecondHand);
-						calculateHandValue(playerFirstHand, playerFirstHandScore);
-						calculateHandValue(playerSecondHand, playerSecondHandScore);
+						playerFirstHandScore = calculateHandValue(playerFirstHand, playerFirstHandScore);
+						playerSecondHandScore = calculateHandValue(playerSecondHand, playerSecondHandScore);
 						printPlayerHand(playerFirstHand, playerFirstHandScore, 1);
 						printPlayerHand(playerSecondHand, playerSecondHandScore, 2);
 						(*turn)++;
@@ -305,31 +303,59 @@ void playBlackJack(Card deck[]) {
 		std::cout << '\n';
 	}
 
-	while(*turn > 1 && **currentScore < 21 && *isPlayerTurn) {
-		std::cout << "Select action:\n([H]it, S[t]and)\n";
-		std::cin >> *option;
-		std::cout << '\n';
-		switch(*option) {
+	for(unsigned i = 1; i < *numHands + 1; i++) {
+		*changePlayerHand = false;
+		if(*numHands == 2) {
+			if(i == 1) {
+				currentHand = &playerFirstHand;
+				currentScore = &playerFirstHandScore;
+			}
+			else {
+				currentHand = &playerSecondHand;
+				currentScore = &playerSecondHandScore;
+			}
+		}
+		else {
+			currentHand = &playerHand;
+			currentScore = &playerScore;
+		}
+		while(*turn > 1 && **currentScore < 21 && *isPlayerTurn && !(*changePlayerHand)) {
+			if(*numHands == 2) {
+				std::cout << "Select action for hand " << i << ":\n([H]it, S[t]and)\n";
+			}
+			else {
+				std::cout << "Select action:\n([H]it, S[t]and)\n";
+			}
+			std::cin >> *option;
+			std::cout << '\n';
+			switch(*option) {
 			case 'H':
 			case 'h':
 				std::cout << "Player hits.\n\n";
 				dealCard(vDeck, chosenCard, rng, *currentHand);
-				playerScore = calculateHandValue(*currentHand, *currentScore);
+				*currentScore = calculateHandValue(*currentHand, *currentScore);
 				printPlayerHand(*currentHand, *currentScore);
 				(*turn)++;
 				break;
 			case 'T':
 			case 't':
 				std::cout << "Player stands.\n\n";
-				*isPlayerTurn = false;
-				*isHouseTurn = true;
+				if(i == *numHands) {
+					// If the player is playing their last hand
+					*isPlayerTurn = false;
+					*isHouseTurn = true;
+				}
+				else {
+					*changePlayerHand = true;
+				}
 				(*turn)++;
 				break;
 			default:
 				std::cout << "Invalid option, choose again\n";
 				break;
+			}
+			std::cout << '\n';
 		}
-		std::cout << '\n';
 	}
 
 	// House turn
@@ -368,13 +394,18 @@ void playBlackJack(Card deck[]) {
 			std::cout << '\n';
 		}
 	}
+	currentHand = NULL;
+	currentScore = NULL;
 
 	// Debug listing remaining cards in deck
 	/*for(unsigned i = 0; i < (*vDeck).size(); i++) {
 	std::cout << (*vDeck).at(i).printName() << '\n';
 	}*/
 
+	delete changePlayerHand;
 	delete chosenCard;
+	delete currentHand;
+	delete currentScore;
 	delete houseHand;
 	delete houseInitScore;
 	delete houseScore;
@@ -394,6 +425,54 @@ void playBlackJack(Card deck[]) {
 	delete turn;
 	delete vDeck;
 	delete waitTime;
+
+	// Debugs to check if and what objects are not deleting correctly
+	/*std::cout << "Deleting changePlayerHand" << '\n';
+	delete changePlayerHand;
+	std::cout << "Deleting chosenCard" << '\n';
+	delete chosenCard;
+	std::cout << "Deleting currentHand" << '\n';
+	delete currentHand;
+	std::cout << "Deleting currentScore" << '\n';
+	delete currentScore;
+	std::cout << "Deleting houseHand" << '\n';
+	delete houseHand;
+	std::cout << "Deleting houseInitScore" << '\n';
+	delete houseInitScore;
+	std::cout << "Deleting houseScore" << '\n';
+	delete houseScore;
+	std::cout << "Deleting isHouseTurn" << '\n';
+	delete isHouseTurn;
+	std::cout << "Deleting isPlayerTurn" << '\n';
+	delete isPlayerTurn;
+	std::cout << "Deleting numHands" << '\n';
+	delete numHands;
+	std::cout << "Deleting option" << '\n';
+	delete option;
+	std::cout << "Deleting playerHand" << '\n';
+	delete playerHand;
+	std::cout << "Deleting playerFirstHand" << '\n';
+	delete playerFirstHand;
+	std::cout << "Deleting playerSecondHand" << '\n';
+	delete playerSecondHand;
+	std::cout << "Deleting playerHasSplit" << '\n';
+	delete playerHasSplit;
+	std::cout << "Deleting playerScore" << '\n';
+	delete playerScore;
+	std::cout << "Deleting playerFirstHandScore" << '\n';
+	delete playerFirstHandScore;
+	std::cout << "Deleting playerSecondHandScore" << '\n';
+	delete playerSecondHandScore;
+	std::cout << "Deleting rng" << '\n';
+	delete rng;
+	std::cout << "Deleting selectDouble" << '\n';
+	delete selectDouble;
+	std::cout << "Deleting turn" << '\n';
+	delete turn;
+	std::cout << "Deleting vDeck" << '\n';
+	delete vDeck;
+	std::cout << "Deleting waitTime" << '\n';
+	delete waitTime;*/
 }
 
 bool playAgain() {
