@@ -267,7 +267,7 @@ void playBlackJack(Card deck[]) {
 					break;
 				case 'P':
 				case 'p':
-					if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
+					if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value == (*playerHand).at(1).value) {
 						std::cout << "Player splits.\n\n";
 						*numHands = 2;
 						*playerHasSplit = true;
