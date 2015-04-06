@@ -303,10 +303,10 @@ void playBlackJack(Card deck[]) {
 		std::cout << '\n';
 	}
 
-	for(unsigned i = 1; i < *numHands + 1; i++) {
+	for(unsigned i = 0; i < *numHands; i++) {
 		*changePlayerHand = false;
 		if(*numHands == 2) {
-			if(i == 1) {
+			if(i == 0) {
 				currentHand = &playerFirstHand;
 				currentScore = &playerFirstHandScore;
 			}
@@ -321,7 +321,7 @@ void playBlackJack(Card deck[]) {
 		}
 		while(*turn > 1 && **currentScore < 21 && *isPlayerTurn && !(*changePlayerHand)) {
 			if(*numHands == 2) {
-				std::cout << "Select action for hand " << i << ":\n([H]it, S[t]and)\n";
+				std::cout << "Select action for hand " << i + 1 << ":\n([H]it, S[t]and)\n";
 			}
 			else {
 				std::cout << "Select action:\n([H]it, S[t]and)\n";
@@ -340,7 +340,7 @@ void playBlackJack(Card deck[]) {
 			case 'T':
 			case 't':
 				std::cout << "Player stands.\n\n";
-				if(i == *numHands) {
+				if((i + 1) == *numHands) {
 					// If the player is playing their last hand
 					*isPlayerTurn = false;
 					*isHouseTurn = true;
@@ -359,28 +359,84 @@ void playBlackJack(Card deck[]) {
 	}
 
 	// House turn
-	if(**currentScore > 21) {
-		std::cout << "PLAYER BUST!!\nHouse wins!!\n\n";
+	int * targetScore = new int;
+	int * upperScore = new int;
+	*upperScore = 0;
+
+	// Check if a non-split hand is bust
+	if(*numHands == 1) {
+		if(*playerScore > 21) {
+			std::cout << "PLAYER BUST!!\n";
+			(*numHands)--;
+		}
+		else {
+			*targetScore = *playerScore;
+		}
 	}
-	else {
-		*isPlayerTurn = false;
-		*isHouseTurn = true;
+
+	// Check if split hands are bust
+	if(*numHands == 2) {
+		if(*playerFirstHandScore > 21) {
+			std::cout << "PLAYER HAND 1 BUST!!\n";
+			(*numHands)--;
+		}
+		if(*playerSecondHandScore > 21) {
+			std::cout << "PLAYER HAND 2 BUST!!\n";
+			(*numHands)--;
+		}
+	}
+
+	if(*numHands > 0) { // Player has at least one playable hand
+		// Set the target scores
+		if(*numHands == 2) {
+			if(*playerFirstHandScore < *playerSecondHandScore) {
+				*targetScore = *playerFirstHandScore;
+				*upperScore = *playerSecondHandScore;
+			}
+			else if(*playerFirstHandScore > *playerSecondHandScore) {
+				*targetScore = *playerSecondHandScore;
+				*upperScore = *playerFirstHandScore;
+			}
+			else {
+				*targetScore = *playerFirstHandScore;
+			}
+		}
+		else if(*numHands == 1 && *playerHasSplit) {
+			if(*playerFirstHandScore <= 21) {
+				*targetScore = *playerFirstHandScore;
+			}
+			else {
+				*targetScore = *playerSecondHandScore;
+			}
+		}
+
 		houseScore = calculateHandValue(houseHand, houseScore);
 		printHouseHand(houseHand, houseScore, turn);
 		std::cout << "\n";
-		while(*isHouseTurn && **currentScore <= 21) {
-			if(*houseScore > **currentScore) {
-				if(*houseScore <= 21) {
-					std::cout << "House wins!!\n\n";
-					*isHouseTurn = false;
+		while(*isHouseTurn && *targetScore <= 21) { // House's turn, and House's hand is playable
+			if(*houseScore > *targetScore) { // House's total is greater than the target score
+				if(*houseScore <= 21) { // House hasn't bust
+					if(*numHands == 2) { // There are split hands, the House must check if it beat the second hand
+						if(*houseScore > *upperScore) {
+							std::cout << "HOUSE WINS AGAINST BOTH HANDS!!\n\n";
+						}
+						else if(*houseScore < *upperScore) {
+							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
+							std::cout << "HOUSE LOSES AGAINST ONE HAND!!\n\n";
+						}
+						else {
+							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
+							std::cout << "HOUSE PUSHES ONE HAND!!\n\n";
+						}
+					}
+					else { // There is only one hand, the House won
+						std::cout << "HOUSE WINS!!\n\n";
+					}
 				}
-				else {
-					std::cout << "HOUSE BUST!!\nPlayer wins!!\n\n";
-					*isHouseTurn = false;
-				}
+				*isHouseTurn = false;
 			}
-			else if(*houseScore == **currentScore) {
-				std::cout << "Push\n\n";
+			else if(*houseScore == *targetScore) {
+				std::cout << "PUSH!!\n\n";
 				*isHouseTurn = false;
 			}
 			else {
@@ -393,7 +449,14 @@ void playBlackJack(Card deck[]) {
 			}
 			std::cout << '\n';
 		}
+		if(*houseScore > 21) {
+			std::cout << "HOUSE BUST!!\nPLAYER WINS!!\n\n";
+		}
 	}
+	else { // Player has no playable hands
+		std::cout << "HOUSE WINS!!\n\n";
+	}
+	
 	currentHand = NULL;
 	currentScore = NULL;
 
@@ -422,7 +485,9 @@ void playBlackJack(Card deck[]) {
 	delete playerSecondHandScore;
 	delete rng;
 	delete selectDouble;
+	delete targetScore;
 	delete turn;
+	delete upperScore;
 	delete vDeck;
 	delete waitTime;
 
