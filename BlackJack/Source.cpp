@@ -300,10 +300,6 @@ void playBlackJack(Card deck[]) {
 				break;
 			}
 		}
-		else if(*playerScore == 22) {
-			// The player's hand should NEVER 
-			std::cout << "Bug detected (Player score = 22)";
-		}
 		else { // Automatically switch to house's turn if player has 21
 			*isPlayerTurn = false;
 			*isHouseTurn = true;
