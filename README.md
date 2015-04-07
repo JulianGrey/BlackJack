@@ -14,13 +14,3 @@ Anything else?
 --------------
 
 Eventually I want to dip my foot into the pool of game engine creation, so after I have developed the code for BlackJack, I want to look into game engine creation / computer graphics, ideally in DirectX or OpenGL, to make a simple graphical game.
-
-----------------------------
-What still needs to be done?
-----------------------------
-
-1. Player splitting their hand
-2. Surrendering a hand
-3. Insurance
-4. Bets and chip total
-
