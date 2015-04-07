@@ -178,6 +178,8 @@ void playBlackJack(Card deck[]) {
 	vector<Card> * playerFirstHand = new vector<Card>;
 	vector<Card> * playerSecondHand = new vector<Card>;
 	vector<Card> * vDeck = resetDeck(deck);
+	vector<Card> ** currentHand = new vector<Card> *; // Pointer containing the current hand in play
+
 	char * option = new char;
 	int * houseInitScore = new int; // Score of the first card in House's hand
 	int * houseScore = new int;
@@ -187,6 +189,7 @@ void playBlackJack(Card deck[]) {
 	int * playerSecondHandScore = new int;
 	int * turn = new int;
 	int * waitTime = new int;
+	int ** currentScore = new int *; // Pointer containing the score of the current hand in play
 
 	bool * changePlayerHand = new bool;
 	bool * isHouseTurn = new bool;
@@ -195,9 +198,6 @@ void playBlackJack(Card deck[]) {
 	bool * insuranceCheck = new bool;
 	bool * playerHasSplit = new bool;
 	bool * selectDouble = new bool;
-
-	vector<Card> ** currentHand = new vector<Card> *; // Pointer containing the current hand in play
-	int ** currentScore = new int *; // Pointer containing the score of the current hand in play
 
 	std::mt19937 * rng = new mt19937;
 	(*rng).seed(std::random_device()());
@@ -260,7 +260,10 @@ void playBlackJack(Card deck[]) {
 			}
 		}
 		if(*playerScore < 21) {
-			std::cout << "Select action\n" << "([H]it, S[t]and, [D]ouble";
+			std::cout << "Select action\n" << "([H]it, S[t]and";
+			if(*playerScore >= 9 && *playerScore <= 11) {
+				std::cout << ", [D]ouble";
+			}
 			if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
 				std::cout << ", S[p]lit";
 			}
@@ -289,14 +292,20 @@ void playBlackJack(Card deck[]) {
 					break;
 				case 'D':
 				case 'd':
-					std::cout << "Player doubles up.\n\n";
-					*selectDouble = true;
-					dealCard(vDeck, chosenCard, rng, playerHand);
-					playerScore = calculateHandValue(playerHand, playerScore);
-					printPlayerHand(playerHand, playerScore);
-					*isPlayerTurn = false;
-					*isHouseTurn = true;
-					(*turn)++;
+					if(*playerScore >= 9 && *playerScore <= 11) {
+						std::cout << "Player doubles up.\n\n";
+						*selectDouble = true;
+						dealCard(vDeck, chosenCard, rng, playerHand);
+						playerScore = calculateHandValue(playerHand, playerScore);
+						printPlayerHand(playerHand, playerScore);
+						*isPlayerTurn = false;
+						*isHouseTurn = true;
+						(*turn)++;
+					}
+					else {
+						std::cout << "Invalid option, choose again\n";
+						break;
+					}
 					break;
 				case 'P':
 				case 'p':
