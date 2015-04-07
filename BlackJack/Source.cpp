@@ -279,7 +279,7 @@ void playBlackJack(Card deck[]) {
 					playerScore = calculateHandValue(playerHand, playerScore);
 					printPlayerHand(playerHand, playerScore);
 					if(*playerScore == 21) {
-						std::cout << "21\n\n";
+						std::cout << "Player stands on 21\n\n";
 					}
 					(*turn)++;
 					break;
@@ -367,6 +367,7 @@ void playBlackJack(Card deck[]) {
 			currentHand = &playerHand;
 			currentScore = &playerScore;
 		}
+
 		while(*turn > 1 && **currentScore < 21 && *isPlayerTurn && !(*changePlayerHand)) {
 			if(*numHands == 2) {
 				std::cout << "Select action for hand " << i + 1 << ":\n([H]it, S[t]and)\n";
@@ -384,10 +385,15 @@ void playBlackJack(Card deck[]) {
 				*currentScore = calculateHandValue(*currentHand, *currentScore);
 				printPlayerHand(*currentHand, *currentScore);
 				if(**currentScore > 21) {
-					std::cout << "BUST!!\n\n";
+					if(*numHands == 2) {
+						std::cout << "PLAYER HAND " << i + 1 << " BUST!!\n\n";
+					}
+					else {
+						std::cout << "PLAYER BUST!!\n\n";
+					}
 				}
 				else if(**currentScore == 21) {
-					std::cout << "21\n\n";
+					std::cout << "Player stands on 21\n\n";
 				}
 				if(**currentScore >= 21 && i != (*numHands) - 1) { // If there is a next hand
 					*changePlayerHand = true;
@@ -421,110 +427,99 @@ void playBlackJack(Card deck[]) {
 	*isPlayerTurn = false;
 	*isHouseTurn = true;
 
-	// House turn
-	int * targetScore = new int;
-	int * upperScore = new int;
-	*upperScore = 0;
-
 	// Check if a non-split hand is bust
 	if(*numHands == 1) {
 		if(*playerScore > 21) {
-			std::cout << "PLAYER BUST!!\n";
 			(*numHands)--;
-		}
-		else {
-			*targetScore = *playerScore;
 		}
 	}
 
 	// Check if split hands are bust
 	if(*numHands == 2) {
 		if(*playerFirstHandScore > 21) {
-			std::cout << "PLAYER HAND 1 BUST!!\n";
 			(*numHands)--;
 		}
 		if(*playerSecondHandScore > 21) {
-			std::cout << "PLAYER HAND 2 BUST!!\n";
 			(*numHands)--;
 		}
 	}
 
 	if(*numHands > 0) { // Player has at least one playable hand
-		// Set the target scores
-		if(*numHands == 2) {
-			if(*playerFirstHandScore < *playerSecondHandScore) {
-				*targetScore = *playerFirstHandScore;
-				*upperScore = *playerSecondHandScore;
-			}
-			else if(*playerFirstHandScore > *playerSecondHandScore) {
-				*targetScore = *playerSecondHandScore;
-				*upperScore = *playerFirstHandScore;
-			}
-			else {
-				*targetScore = *playerFirstHandScore;
-			}
-		}
-		else if(*numHands == 1 && *playerHasSplit) {
-			if(*playerFirstHandScore <= 21) {
-				*targetScore = *playerFirstHandScore;
-			}
-			else {
-				*targetScore = *playerSecondHandScore;
-			}
-		}
-
 		houseScore = calculateHandValue(houseHand, houseScore);
 		printHouseHand(houseHand, houseScore, turn);
 		std::cout << "\n";
-		while(*isHouseTurn && *targetScore <= 21) { // House's turn, and House's hand is playable
-			if(*houseScore >= *targetScore) { // House's total is greater than the target score
-				if(*houseScore <= 21) { // House hasn't bust
-					if(*numHands == 2) { // There are split hands, the House must check if it beat the second hand
-						if(*houseScore > *upperScore) {
-							std::cout << "HOUSE WINS AGAINST BOTH HANDS!!\n\n";
+		std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
+
+		while(*isHouseTurn && *houseScore < 17) {
+			dealCard(vDeck, chosenCard, rng, houseHand);
+			houseScore = calculateHandValue(houseHand, houseScore);
+			printHouseHand(houseHand, houseScore, turn);
+			std::cout << '\n';
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
+
+		if(*houseScore <= 21) {
+			std::cout << "House stands.\n\n";
+			if(*numHands == 2) {
+				if(*houseScore == *playerFirstHandScore) {
+					std::cout << "HOUSE PUSHES PLAYER HAND 1!!\n\n";
+				}
+				else if(*houseScore > *playerFirstHandScore) {
+					std::cout << "HOUSE WINS AGAINST PLAYER HAND 1!!\n\n";
+				}
+				else {
+					std::cout << "PLAYER WINS WITH HAND 1!!\n\n";
+				}
+				if(*houseScore == *playerSecondHandScore) {
+					std::cout << "HOUSE PUSHES PLAYER HAND 2!!\n\n";
+				}
+				else if(*houseScore > *playerSecondHandScore) {
+					std::cout << "HOUSE WINS AGAINST PLAYER HAND 2!!\n\n";
+				}
+				else {
+					std::cout << "PLAYER WINS WITH HAND 2!!\n\n";
+				}
+			}
+			else if(*numHands == 1) {
+				if(*playerHasSplit) {
+					if(*playerFirstHandScore <= 21) {
+						if(*houseScore == *playerFirstHandScore) {
+							std::cout << "HOUSE PUSHES PLAYER HAND 1!!\n\n";
 						}
-						else if(*houseScore == *upperScore) {
-							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
-							std::cout << "HOUSE PUSHES ONE HAND!!\n\n";
+						else if(*houseScore > *playerFirstHandScore) {
+							std::cout << "HOUSE WINS AGAINST PLAYER HAND 1!!\n\n";
 						}
 						else {
-							std::cout << "PLAYER WINS ONE HAND!!\n\n";
-							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
+							std::cout << "PLAYER WINS WITH HAND 1!!\n\n";
 						}
 					}
-					else { // There is only one hand, the House won
-						if(*houseScore == *targetScore) {
-							std::cout << "HOUSE PUSHES!!\n\n";
+					else {
+						if(*houseScore == *playerSecondHandScore) {
+							std::cout << "HOUSE PUSHES PLAYER HAND 2!!\n\n";
+						}
+						else if(*houseScore > *playerSecondHandScore) {
+							std::cout << "HOUSE WINS AGAINST PLAYER HAND 2!!\n\n";
 						}
 						else {
-							std::cout << "HOUSE WINS!!\n\n";
+							std::cout << "PLAYER WINS WITH HAND 2!!\n\n";
 						}
 					}
 				}
-				*isHouseTurn = false;
+				else {
+					if(*houseScore == *playerScore) {
+						std::cout << "HOUSE PUSHES PLAYER!!\n\n";
+					}
+					else if(*houseScore > *playerScore) {
+						std::cout << "HOUSE WINS!!\n\n";
+					}
+					else {
+						std::cout << "PLAYER WINS!!\n\n";
+					}
+				}
 			}
-			else if(*houseScore == *targetScore) {
-				std::cout << "HOUSE PUSHES!!\n\n";
-				*isHouseTurn = false;
-			}
-			else {
-				std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
-				std::cout << "House hits.\n\n";
-				dealCard(vDeck, chosenCard, rng, houseHand);
-				houseScore = calculateHandValue(houseHand, houseScore);
-				printHouseHand(houseHand, houseScore, turn);
-				(*turn)++;
-			}
-			std::cout << '\n';
 		}
-		if(*houseScore > 21) {
-			std::cout << "HOUSE BUST!!\n";
-			if(*numHands == 2) {
-				std::cout << "PLAYER WINS WITH BOTH HANDS!!\n\n";
-			}
-			else {
-				std::cout << "PLAYER WINS!!\n\n";
-			}
+		else {
+			std::cout << "HOUSE BUST!!\nPLAYER WINS!!\n\n";
 		}
 	}
 	else { // Player has no playable hands
@@ -561,9 +556,7 @@ void playBlackJack(Card deck[]) {
 	delete playerSecondHandScore;
 	delete rng;
 	delete selectDouble;
-	delete targetScore;
 	delete turn;
-	delete upperScore;
 	delete vDeck;
 	delete waitTime;
 
