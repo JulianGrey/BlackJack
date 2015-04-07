@@ -191,6 +191,8 @@ void playBlackJack(Card deck[]) {
 	bool * changePlayerHand = new bool;
 	bool * isHouseTurn = new bool;
 	bool * isPlayerTurn = new bool;
+	bool * isInsured = new bool;
+	bool * insuranceCheck = new bool;
 	bool * playerHasSplit = new bool;
 	bool * selectDouble = new bool;
 
@@ -205,6 +207,8 @@ void playBlackJack(Card deck[]) {
 	*waitTime = 300;
 	*isHouseTurn = false;
 	*isPlayerTurn = true;
+	*isInsured = false;
+	*insuranceCheck = false;
 	*selectDouble = false;
 	*playerHasSplit = false;
 	*houseScore = *houseInitScore = *playerScore = 0;
@@ -227,8 +231,34 @@ void playBlackJack(Card deck[]) {
 	printPlayerHand(playerHand, playerScore);
 	std::cout << '\n';
 
+	if(*houseInitScore == 11) {
+		*insuranceCheck = true;
+	}
+
 	// Player's first turn
 	while(*turn == 1 && isPlayerTurn) {
+		if(*insuranceCheck && *playerScore < 21) {
+			std::cout << "Do you want insurance?\n([Y]es, [N]o): ";
+			while(*insuranceCheck) {
+				cin >> *option;
+
+				switch(*option) {
+				case 'Y':
+				case 'y':
+					*isInsured = true;
+					*insuranceCheck = false;
+					break;
+				case 'N':
+				case 'n':
+					*isInsured = false;
+					*insuranceCheck = false;
+					break;
+				default:
+					std::cout << "Invalid option, choose again\n";
+					break;
+				}
+			}
+		}
 		if(*playerScore < 21) {
 			std::cout << "Select action\n" << "([H]it, S[t]and, [D]ouble";
 			if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
@@ -245,6 +275,9 @@ void playBlackJack(Card deck[]) {
 					dealCard(vDeck, chosenCard, rng, playerHand);
 					playerScore = calculateHandValue(playerHand, playerScore);
 					printPlayerHand(playerHand, playerScore);
+					if(*playerScore == 21) {
+						std::cout << "21\n\n";
+					}
 					(*turn)++;
 					break;
 				case 'T':
@@ -290,14 +323,20 @@ void playBlackJack(Card deck[]) {
 						(*turn)++;
 						break;
 					}
+					else {
+						std::cout << "Invalid option, choose again\n";
+						break;
+					}
 				default:
 					std::cout << "Invalid option, choose again\n";
 					break;
 			}
 		}
-		else { // Automatically switch to house's turn if player has 21
+		else { // Player's score is at least 21
+			if(*playerScore == 21) {
+				*isHouseTurn = true;
+			}
 			*isPlayerTurn = false;
-			*isHouseTurn = true;
 			(*turn)++;
 		}
 		std::cout << '\n';
@@ -335,6 +374,15 @@ void playBlackJack(Card deck[]) {
 				dealCard(vDeck, chosenCard, rng, *currentHand);
 				*currentScore = calculateHandValue(*currentHand, *currentScore);
 				printPlayerHand(*currentHand, *currentScore);
+				if(**currentScore > 21) {
+					std::cout << "BUST!!\n\n";
+				}
+				else if(**currentScore == 21) {
+					std::cout << "21\n\n";
+				}
+				if(**currentScore >= 21 && i != (*numHands) - 1) { // If there is a next hand
+					*changePlayerHand = true;
+				}
 				(*turn)++;
 				break;
 			case 'T':
@@ -353,6 +401,10 @@ void playBlackJack(Card deck[]) {
 			default:
 				std::cout << "Invalid option, choose again\n";
 				break;
+			}
+			if(*changePlayerHand) {
+				std::cout << "Changing hands...\n\n";
+				printPlayerHand(playerSecondHand, playerSecondHandScore);
 			}
 			std::cout << '\n';
 		}
@@ -422,13 +474,13 @@ void playBlackJack(Card deck[]) {
 						if(*houseScore > *upperScore) {
 							std::cout << "HOUSE WINS AGAINST BOTH HANDS!!\n\n";
 						}
-						else if(*houseScore < *upperScore) {
-							std::cout << "PLAYER WINS ONE HAND!!\n\n";
-							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
-						}
-						else {
+						else if(*houseScore == *upperScore) {
 							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
 							std::cout << "HOUSE PUSHES ONE HAND!!\n\n";
+						}
+						else {
+							std::cout << "PLAYER WINS ONE HAND!!\n\n";
+							std::cout << "HOUSE WINS AGAINST ONE HAND!!\n\n";
 						}
 					}
 					else { // There is only one hand, the House won
@@ -485,7 +537,9 @@ void playBlackJack(Card deck[]) {
 	delete houseHand;
 	delete houseInitScore;
 	delete houseScore;
+	delete insuranceCheck;
 	delete isHouseTurn;
+	delete isInsured;
 	delete isPlayerTurn;
 	delete numHands;
 	delete option;
