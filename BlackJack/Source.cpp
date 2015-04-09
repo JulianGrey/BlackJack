@@ -197,7 +197,6 @@ void displayPlayerStats(double * chipTotal, double betOne = 0, double betTwo = 0
 		}
 		std::cout << '\n';
 	}
-	//std::cout.precision(0);
 	std::cout.precision(std::to_string(static_cast<int>(*chipTotal)).size() + 2);
 	std::cout << "Chip total: " << *chipTotal << '\n';
 	std::cout.precision(0);
@@ -238,6 +237,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	bool * houseBlackjack = new bool;
 	bool * playerHasSplit = new bool;
 	bool * selectDouble = new bool;
+	bool * surrender = new bool;
 
 	std::mt19937 * rng = new mt19937;
 	(*rng).seed(std::random_device()());
@@ -245,6 +245,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	*isPlayerTurn = true;
 	*houseBlackjack = *isHouseTurn = *isInsured = false;
 	*insuranceCheck = *playerHasSplit = *selectDouble = false;
+	*surrender = false;
 
 	*waitTime = 300;
 	*numHands = *turn = 1;
@@ -288,6 +289,9 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	if(*houseInitScore == 11) {
 		*insuranceCheck = true;
 	}
+	if(*houseScore == 21) {
+		*houseBlackjack = true;
+	}
 
 	// Player's first turn
 	while(*turn == 1 && isPlayerTurn) {
@@ -297,28 +301,27 @@ void playBlackJack(Card deck[], double * chipTotal) {
 				cin >> *option;
 
 				switch(*option) {
-				case 'Y':
-				case 'y':
-					*chipTotal -= *bet / 2;
-					*insuranceBet = *bet / 2;
-					*isInsured = true;
-					*insuranceCheck = false;
-					printHouseHand(houseHand, houseScore, turn, *isInsured);
-					break;
-				case 'N':
-				case 'n':
-					*isInsured = false;
-					*insuranceCheck = false;
-					break;
-				default:
-					std::cout << "Invalid option, choose again\n";
-					break;
+					case 'Y':
+					case 'y':
+						*chipTotal -= *bet / 2;
+						*insuranceBet = *bet / 2;
+						*isInsured = true;
+						*insuranceCheck = false;
+						printHouseHand(houseHand, houseScore, turn, *isInsured);
+						break;
+					case 'N':
+					case 'n':
+						*isInsured = false;
+						*insuranceCheck = false;
+						break;
+					default:
+						std::cout << "Invalid option, choose again\n";
+						break;
 				}
 			}
 		}
 
 		if(*isInsured && *houseScore == 21) { // Insurance bet won
-			*houseBlackjack = true;
 			*isPlayerTurn = false;
 			*isHouseTurn = true;
 			(*turn)++;
@@ -336,7 +339,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 			if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value >= 10 && (*playerHand).at(1).value >= 10) {
 				std::cout << ", S[p]lit";
 			}
-			std::cout << "): ";
+			std::cout << ", S[u]rrender): ";
 			std::cin >> *option;
 			std::cout << '\n';
 
@@ -420,6 +423,13 @@ void playBlackJack(Card deck[], double * chipTotal) {
 						std::cout << "Invalid option, choose again\n";
 						break;
 					}
+				case 'U':
+				case 'u':
+					*surrender = true;
+					*isPlayerTurn = false;
+					*isHouseTurn = true;
+					(*turn)++;
+					break;
 				default:
 					std::cout << "Invalid option, choose again\n";
 					break;
@@ -457,7 +467,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 				std::cout << "Select action for hand " << i + 1 << ":\n([H]it, S[t]and)\n";
 			}
 			else {
-				std::cout << "Select action:\n([H]it, S[t]and)\n";
+				std::cout << "Select action:\n([H]it, S[t]and, S[u]rrender)\n";
 			}
 			std::cin >> *option;
 			std::cout << '\n';
@@ -497,6 +507,18 @@ void playBlackJack(Card deck[], double * chipTotal) {
 				}
 				(*turn)++;
 				break;
+			case 'U':
+			case 'u':
+				if(*numHands == 1) {
+					*surrender = true;
+					*isPlayerTurn = false;
+					*isHouseTurn = true;
+					(*turn)++;
+				}
+				else {
+					std::cout << "Invalid option, choose again\n";
+				}
+				break;
 			default:
 				std::cout << "Invalid option, choose again\n";
 				break;
@@ -534,7 +556,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 		std::cout << "\n";
 		std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
 
-		while(*isHouseTurn && *houseScore < 17) {
+		while(*isHouseTurn && !(*surrender) && *houseScore < 17) {
 			dealCard(vDeck, chosenCard, rng, houseHand);
 			houseScore = calculateHandValue(houseHand, houseScore);
 			printHouseHand(houseHand, houseScore, turn);
@@ -543,8 +565,21 @@ void playBlackJack(Card deck[], double * chipTotal) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
 
 		if(*houseScore <= 21) {
-			std::cout << "House stands.\n\n";
-			if(*numHands == 2) {
+			if(!(*surrender)) {
+				std::cout << "House stands.\n\n";
+			}
+
+			if(*surrender) {
+				if(*houseBlackjack) {
+					std::cout << "HOUSE HAS A BLACKJACK!! SURRENDER DENIED!!\n\n";
+				}
+				else {
+					if(*numHands == 1) {
+						*chipsWon += *handOneBet / 2;
+					}
+				}
+			}
+			else if(*numHands == 2) {
 				if(*houseScore == *playerHandOneScore) {
 					std::cout << "HOUSE PUSHES PLAYER HAND 1!!\n\n";
 					*chipsWon += *handOneBet;
@@ -569,7 +604,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 				}
 			}
 			else if(*numHands == 1) {
-				if(*houseBlackjack) { // House dealt Blackjack with Ace as showing card, and player insured
+				if(*houseBlackjack && *isInsured) { // House dealt Blackjack with Ace as showing card, and player insured
 					std::cout << "INSURANCE PAYS OUT!!\n\n";
 					*chipsWon += *handOneBet;
 				}
@@ -686,6 +721,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	delete playerScore;
 	delete rng;
 	delete selectDouble;
+	delete surrender;
 	delete turn;
 	delete vDeck;
 	delete waitTime;
