@@ -552,7 +552,9 @@ void playBlackJack(Card deck[], double * chipTotal) {
 
 	if(*numHands > 0) { // Player has at least one playable hand
 		houseScore = calculateHandValue(houseHand, houseScore);
-		printHouseHand(houseHand, houseScore, turn);
+		if(!(*surrender)) {
+			printHouseHand(houseHand, houseScore, turn);
+		}
 		std::cout << "\n";
 		std::this_thread::sleep_for(std::chrono::milliseconds(*waitTime));
 
@@ -570,6 +572,10 @@ void playBlackJack(Card deck[], double * chipTotal) {
 			}
 
 			if(*surrender) {
+				if(*houseInitScore >= 10) {
+					printHouseHand(houseHand, houseScore, turn);
+					std::cout << '\n';
+				}
 				if(*houseBlackjack) {
 					std::cout << "HOUSE HAS A BLACKJACK!! SURRENDER DENIED!!\n\n";
 				}
