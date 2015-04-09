@@ -175,18 +175,21 @@ void printHouseHand(vector<Card> * hand, int * score, int * turn) {
 	}
 }
 
-void displayPlayerStats(int * chipTotal, int betOne = 0, int betTwo = 0, int numHands = 1) {
+void displayPlayerStats(double * chipTotal, double betOne = 0, double betTwo = 0, int numHands = 1) {
 	if(betOne != 0) { // If a bet is in play
 		if(numHands == 1) {
+			std::cout.precision(std::to_string(static_cast<int>(betOne)).size() + 2);
 			std::cout << "Current bet: " << betOne << '\n';
 		}
 		else if(numHands > 1) { // Preparing a statement for implementing multiple splits
 			for(unsigned i = 0; i < numHands; i++) {
 				std::cout << "Current bet (hand " << i << "): ";
 				if(i == 0) {
+					std::cout.precision(std::to_string(static_cast<int>(betOne)).size() + 2);
 					std::cout << betOne;
 				}
 				else if(i == 1) {
+					std::cout.precision(std::to_string(static_cast<int>(betTwo)).size() + 2);
 					std::cout << betTwo;
 				}
 				std::cout << '\n';
@@ -194,10 +197,13 @@ void displayPlayerStats(int * chipTotal, int betOne = 0, int betTwo = 0, int num
 		}
 		std::cout << '\n';
 	}
+	//std::cout.precision(0);
+	std::cout.precision(std::to_string(static_cast<int>(*chipTotal)).size() + 2);
 	std::cout << "Chip total: " << *chipTotal << '\n';
+	std::cout.precision(0);
 }
 
-void playBlackJack(Card deck[], int * chipTotal) {
+void playBlackJack(Card deck[], double * chipTotal) {
 	Card * chosenCard = new Card;
 	vector<Card> * houseHand = new vector<Card>;
 	vector<Card> * playerHand = new vector<Card>;
@@ -207,10 +213,6 @@ void playBlackJack(Card deck[], int * chipTotal) {
 	vector<Card> ** currentHand = new vector<Card> *; // Pointer containing the current hand in play
 
 	char * option = new char;
-	int * bet = new int;
-	int * chipsWon = new int;
-	int * handOneBet = new int;
-	int * handTwoBet = new int;
 	int * houseInitScore = new int; // Score of the first card in House's hand
 	int * houseScore = new int;
 	int * insuranceBet = new int;
@@ -221,6 +223,12 @@ void playBlackJack(Card deck[], int * chipTotal) {
 	int * turn = new int;
 	int * waitTime = new int;
 	int ** currentScore = new int *; // Pointer containing the score of the current hand in play
+
+	double * bet = new double;
+	double * initChipTotal = new double;
+	double * chipsWon = new double;
+	double * handOneBet = new double;
+	double * handTwoBet = new double;
 
 	bool * changePlayerHand = new bool;
 	bool * isHouseTurn = new bool;
@@ -245,6 +253,7 @@ void playBlackJack(Card deck[], int * chipTotal) {
 	*chipsWon = *handOneBet = *handTwoBet = 0;
 	*houseScore = *houseInitScore = *playerScore = 0;
 	*playerHandOneScore = *playerHandTwoScore = 0;
+	*initChipTotal = *chipTotal;
 
 	// Gameplay
 	// Deal cards and calculate values
@@ -363,29 +372,34 @@ void playBlackJack(Card deck[], int * chipTotal) {
 				case 'P':
 				case 'p':
 					if((*playerHand).at(0).strValue == (*playerHand).at(1).strValue || (*playerHand).at(0).value == (*playerHand).at(1).value) {
-						std::cout << "Player splits.\n\n";
-						*numHands = 2;
-						*playerHasSplit = true;
-						*handTwoBet = *handOneBet;
-						*chipTotal -= *handTwoBet;
-						(*playerHandOne).push_back((*playerHand).at(0));
-						(*playerHandTwo).push_back((*playerHand).at(1));
-						// Revert any changes made to the value of Aces in the event of being dealt two Aces
-						// (see line 101 for information)
-						if((*playerHandOne).at(0).value == 1) {
-							(*playerHandOne).at(0).setValues(11);
+						if((*bet) * 2 <= *chipTotal) {
+							std::cout << "Player splits.\n\n";
+							*numHands = 2;
+							*playerHasSplit = true;
+							*handTwoBet = *handOneBet;
+							*chipTotal -= *handTwoBet;
+							(*playerHandOne).push_back((*playerHand).at(0));
+							(*playerHandTwo).push_back((*playerHand).at(1));
+							// Revert any changes made to the value of Aces in the event of being dealt two Aces
+							// (see line 101 for information)
+							if((*playerHandOne).at(0).value == 1) {
+								(*playerHandOne).at(0).setValues(11);
+							}
+							if((*playerHandTwo).at(0).value == 1) {
+								(*playerHandTwo).at(0).setValues(11);
+							}
+							dealCard(vDeck, chosenCard, rng, playerHandOne);
+							dealCard(vDeck, chosenCard, rng, playerHandTwo);
+							displayPlayerStats(chipTotal, *handOneBet, *handTwoBet, *numHands);
+							playerHandOneScore = calculateHandValue(playerHandOne, playerHandOneScore);
+							playerHandTwoScore = calculateHandValue(playerHandTwo, playerHandTwoScore);
+							printPlayerHand(playerHandOne, playerHandOneScore, 1);
+							printPlayerHand(playerHandTwo, playerHandTwoScore, 2);
+							(*turn)++;
 						}
-						if((*playerHandTwo).at(0).value == 1) {
-							(*playerHandTwo).at(0).setValues(11);
+						else {
+							std::cout << "Insufficient funds, can't split.\n\n";
 						}
-						dealCard(vDeck, chosenCard, rng, playerHandOne);
-						dealCard(vDeck, chosenCard, rng, playerHandTwo);
-						displayPlayerStats(chipTotal, *handOneBet, *handTwoBet, *numHands);
-						playerHandOneScore = calculateHandValue(playerHandOne, playerHandOneScore);
-						playerHandTwoScore = calculateHandValue(playerHandTwo, playerHandTwoScore);
-						printPlayerHand(playerHandOne, playerHandOneScore, 1);
-						printPlayerHand(playerHandTwo, playerHandTwoScore, 2);
-						(*turn)++;
 						break;
 					}
 					else {
@@ -570,7 +584,18 @@ void playBlackJack(Card deck[], int * chipTotal) {
 					}
 				}
 				else {
-					if(*houseScore == *playerScore) {
+					if(*playerScore == 21 && (*playerHand).size() == 2) { // If a BlackJack was dealt
+						std::cout << "BLACKJACK\n\n";
+						if(*houseScore == *playerScore) {
+							std::cout << "HOUSE PUSHES PLAYER!!\n\n";
+							*chipsWon += *handOneBet;
+						}
+						else {
+							std::cout << "PLAYER WINS WITH A BLACKJACK!!\n\n";
+							*chipsWon += *handOneBet * 2.5;
+						}
+					}
+					else if(*houseScore == *playerScore) {
 						std::cout << "HOUSE PUSHES PLAYER!!\n\n";
 						*chipsWon += *handOneBet;
 					}
@@ -600,7 +625,11 @@ void playBlackJack(Card deck[], int * chipTotal) {
 	*handOneBet = 0;
 	*handTwoBet = 0;
 
-	std::cout << "Chips won: " << *chipsWon << '\n';
+	std::cout << "Balance change: ";
+	if(*chipTotal - *initChipTotal > 0) {
+		std::cout << "+";
+	}
+	std::cout << *chipTotal - *initChipTotal << '\n';
 	displayPlayerStats(chipTotal);
 	std::cout << '\n';
 
@@ -621,6 +650,7 @@ void playBlackJack(Card deck[], int * chipTotal) {
 	delete houseHand;
 	delete houseInitScore;
 	delete houseScore;
+	delete initChipTotal;
 	delete insuranceBet;
 	delete insuranceCheck;
 	delete isHouseTurn;
@@ -718,7 +748,7 @@ bool playAgain() {
 int main() {
 	Card deck[52]; // Default deck
 	Card * pDeck = buildDeck(deck); // Dynamic deck. This will be used as cards are taken from the deck
-	int * chipTotal = new int;
+	double * chipTotal = new double;
 	bool * playGame = new bool;
 
 	*chipTotal = 300;
