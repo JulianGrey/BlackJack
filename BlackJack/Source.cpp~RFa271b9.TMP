@@ -235,16 +235,18 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	bool * isPlayerTurn = new bool;
 	bool * isInsured = new bool;
 	bool * insuranceCheck = new bool;
-	bool * houseBlackjack = new bool;
 	bool * playerHasSplit = new bool;
 	bool * selectDouble = new bool;
 
 	std::mt19937 * rng = new mt19937;
 	(*rng).seed(std::random_device()());
 
+	*isHouseTurn = false;
 	*isPlayerTurn = true;
-	*houseBlackjack = *isHouseTurn = *isInsured = false;
-	*insuranceCheck = *playerHasSplit = *selectDouble = false;
+	*isInsured = false;
+	*insuranceCheck = false;
+	*playerHasSplit = false;
+	*selectDouble = false;
 
 	*waitTime = 300;
 	*numHands = *turn = 1;
@@ -289,6 +291,8 @@ void playBlackJack(Card deck[], double * chipTotal) {
 		*insuranceCheck = true;
 	}
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
 	// Player's first turn
 	while(*turn == 1 && isPlayerTurn) {
 		if(*insuranceCheck && *playerScore < 21) {
@@ -318,11 +322,9 @@ void playBlackJack(Card deck[], double * chipTotal) {
 		}
 
 		if(*isInsured && *houseScore == 21) { // Insurance bet won
-			*houseBlackjack = true;
 			*isPlayerTurn = false;
 			*isHouseTurn = true;
 			(*turn)++;
-			break;
 		}
 		else {
 			*insuranceBet = 0;
@@ -569,11 +571,7 @@ void playBlackJack(Card deck[], double * chipTotal) {
 				}
 			}
 			else if(*numHands == 1) {
-				if(*houseBlackjack) { // House dealt Blackjack with Ace as showing card, and player insured
-					std::cout << "INSURANCE PAYS OUT!!\n\n";
-					*chipsWon += *handOneBet;
-				}
-				else if(*playerHasSplit) {
+				if(*playerHasSplit) {
 					if(*playerHandOneScore <= 21) {
 						if(*houseScore == *playerHandOneScore) {
 							std::cout << "HOUSE PUSHES PLAYER HAND 1!!\n\n";
@@ -665,7 +663,6 @@ void playBlackJack(Card deck[], double * chipTotal) {
 	delete chosenCard;
 	delete currentHand;
 	delete currentScore;
-	delete houseBlackjack;
 	delete houseHand;
 	delete houseInitScore;
 	delete houseScore;
